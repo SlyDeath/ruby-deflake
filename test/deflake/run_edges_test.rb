@@ -90,17 +90,24 @@ module Deflake
       end
     end
 
+    # Gives bisect this order of the whole file instead of running it
+    module FakeOrder
+      class << self
+        attr_accessor :ids
+      end
+
+      def order(...) = FakeOrder.ids ? [FakeOrder.ids, false] : super
+    end
+    Execution.singleton_class.prepend(FakeOrder)
+
     def test_a_second_polluter_of_a_group_does_not_blame_the_group
-      order = %w[A#one A#two A#three V#victim]
-      Execution.singleton_class.alias_method(:original_order, :order)
-      Execution.define_singleton_method(:order) { |*, **| [order, false] }
+      FakeOrder.ids = %w[A#one A#two A#three V#victim]
       bisect = Bisect.new("t.rb", seed: 1, adapter: TwoPolluters)
 
       refute_empty bisect.call("V#victim")
       assert_empty bisect.group_wide
     ensure
-      Execution.singleton_class.alias_method(:order, :original_order)
-      Execution.singleton_class.send(:remove_method, :original_order)
+      FakeOrder.ids = nil
     end
 
     private

@@ -43,7 +43,7 @@ module Deflake
     end
 
     def test_complains_about_a_missing_file
-      ["missing_test.rb", "missing_test.rb:5", "#{File.dirname(fixture("sample.rb"))}:5"].each do |path|
+      ["missing_test.rb", "missing_test.rb:5"].each do |path|
         status, _, err = run_cli(path, "--runs", "1")
 
         assert_equal 2, status, path

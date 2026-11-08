@@ -56,7 +56,7 @@ module Deflake
           end
         end
 
-        def in_new_transaction? = open_transactions > depth.to_i
+        def in_new_transaction?(open = open_transactions) = open > depth.to_i
 
         def open_transactions = ::ActiveRecord::Base.connection_pool.with_connection(&:open_transactions)
       end

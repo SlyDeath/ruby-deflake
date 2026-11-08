@@ -72,14 +72,10 @@ module Deflake
     def test_fixtures_loaded_in_a_transaction_open_before_the_test_are_a_baseline
       rows = Leaks::Rows
       rows.depth = 1
-      rows.define_singleton_method(:open_transactions) { 1 }
 
-      refute_predicate rows, :in_new_transaction?
-      rows.define_singleton_method(:open_transactions) { 2 }
-
-      assert_predicate rows, :in_new_transaction?
+      refute rows.in_new_transaction?(1)
+      assert rows.in_new_transaction?(2)
     ensure
-      rows.singleton_class.send(:remove_method, :open_transactions)
       rows.depth = nil
     end
 
