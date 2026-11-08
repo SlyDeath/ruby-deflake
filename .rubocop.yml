@@ -1,0 +1,29 @@
+plugins:
+  - rubocop-minitest
+  - rubocop-rake
+
+# Add our excludes to RuboCop's defaults (vendor/, etc.) instead of replacing them
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "test/fixtures/**/*"
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Class docs will be written before the 0.1 release
+Style/Documentation:
+  Enabled: false
+
+# Keyword arguments with defaults read well, however many there are
+Metrics/ParameterLists:
+  CountKeywordArgs: false

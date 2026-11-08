@@ -1,0 +1,21 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+/Gemfile.lock
+
+# macOS
+.DS_Store
+._*
+
+# VS Code
+.vscode/
+.history/
+*.code-workspace
+
+# RubyMine / JetBrains
+.idea/

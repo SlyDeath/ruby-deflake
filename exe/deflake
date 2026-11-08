@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "deflake"
+
+code = Deflake::CLI.new(ARGV).run
+# After Ctrl-C, end the way an interrupted program does, so a shell loop around deflake stops too
+if code == 130
+  # SYSTEM_DEFAULT: Ruby's own handler would raise Interrupt and print its backtrace
+  trap("INT", "SYSTEM_DEFAULT")
+  Process.kill("INT", Process.pid)
+  # In case the signal arrives a moment later
+  sleep 1
+end
+exit code
