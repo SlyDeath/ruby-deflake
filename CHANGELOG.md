@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-08
+
+- A folder given instead of a test file gets a clear message instead of "no such file".
+
 ## [0.1.0] - 2026-11-08
 
 First public release.

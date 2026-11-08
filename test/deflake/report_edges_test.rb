@@ -29,6 +29,13 @@ module Deflake
       assert_includes err.string, "no such file"
     end
 
+    def test_says_that_a_folder_is_not_a_test_file
+      err = StringIO.new
+
+      assert_equal 2, CLI.new([File.expand_path("../fixtures", __dir__)], out: StringIO.new, err: err).run
+      assert_includes err.string, "is a folder: deflake checks one test file at a time"
+    end
+
     def test_a_reader_that_stops_early_is_not_an_error
       out = Object.new
       def out.puts(*) = raise(Errno::EPIPE)

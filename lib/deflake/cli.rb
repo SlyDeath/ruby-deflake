@@ -87,6 +87,7 @@ module Deflake
 
     def run_tests
       path, line = target
+      raise Error, "#{path} is a folder: deflake checks one test file at a time" if File.directory?(path)
       raise Error, "no such file: #{path}" unless File.file?(path)
 
       Execution.timeout = @options[:timeout]
