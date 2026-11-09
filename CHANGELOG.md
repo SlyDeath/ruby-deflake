@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- `TEST_PATH` may be a folder: every `*_test.rb` and `*_spec.rb` in it and its subfolders is checked, one file after another, with one report and a list of the files to look at. No more shell loops over files.
+- The JSON report has the `file` of every test.
+
 ## [0.1.1] - 2026-11-08
 
 - A folder given instead of a test file gets a clear message instead of "no such file".

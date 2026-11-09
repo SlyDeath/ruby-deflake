@@ -7,13 +7,22 @@ module Deflake
   class JsonReport
     def initialize(out)
       @out = out
+      @objects = []
     end
 
+    def start(_file); end
+
     # not_run: ids of tests on the line that never started, each one an object with the verdict "not_run"
-    def print(diagnoses, not_run: [], **)
+    def print(diagnoses, file: nil, not_run: [], **)
       objects = diagnoses.map { |diagnosis| as_json(diagnosis) } + not_run.map { |id| never_ran(id) }
+      objects = objects.map { |object| { file: file, **object } } if file
+      @objects.concat(objects)
+    end
+
+    # One array for every file, printed at the end
+    def finish
       # Names and paths in another encoding, as under LANG=C, would stop the generator
-      @out.puts JSON.pretty_generate(ResultFile.clean(objects))
+      @out.puts JSON.pretty_generate(ResultFile.clean(@objects))
     end
 
     private

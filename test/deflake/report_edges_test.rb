@@ -17,7 +17,9 @@ module Deflake
 
     def test_json_report_lists_a_test_that_never_ran_and_survives_odd_bytes
       out = StringIO.new
-      JsonReport.new(out).print([], not_run: ["A#test_\xC3".b])
+      report = JsonReport.new(out)
+      report.print([], not_run: ["A#test_\xC3".b])
+      report.finish
 
       assert_equal "not_run", JSON.parse(out.string).first["verdict"]
     end
@@ -27,13 +29,6 @@ module Deflake
 
       assert_equal 2, CLI.new(["no\nsuch.rb"], out: StringIO.new, err: err).run
       assert_includes err.string, "no such file"
-    end
-
-    def test_says_that_a_folder_is_not_a_test_file
-      err = StringIO.new
-
-      assert_equal 2, CLI.new([File.expand_path("../fixtures", __dir__)], out: StringIO.new, err: err).run
-      assert_includes err.string, "is a folder: deflake checks one test file at a time"
     end
 
     def test_a_reader_that_stops_early_is_not_an_error

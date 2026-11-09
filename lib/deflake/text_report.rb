@@ -14,6 +14,15 @@ module Deflake
       @out = out
     end
 
+    # Heads the tests of each file when a folder is checked
+    def start(file)
+      @out.puts if @started
+      @started = true
+      @out.puts "== #{file}"
+    end
+
+    def finish; end
+
     # shared: names more than one test of the file has, even tests left out of the report
     def print(diagnoses, shared: [], **)
       # Tests with the same name, such as RSpec examples from shared groups, get their ids too

@@ -28,6 +28,7 @@ Run deflake from the root of your project:
 ```bash
 bundle exec deflake test/models/user_test.rb --runs 50
 bundle exec deflake spec/models/user_spec.rb:42 --runs 50 --jobs 4
+bundle exec deflake test/models --runs 5
 ```
 
 ```
@@ -52,6 +53,8 @@ A process that fails while every test in it passed is reported as *errors outsid
 
 With `TEST_PATH:LINE` deflake still runs the whole file, but reports only the tests on that line, and errors outside of tests, which may be what stopped them. In Minitest that is the test declared closest above the line, whatever its style: `def test_...`, Rails' `test "..."`, `it "..."` or a macro of the project that defines a test; a line in a test of a class without a name is refused, as such a test cannot run alone. In RSpec it is what `rspec TEST_PATH:LINE` runs: the example on that line, or every example of a `describe` or `context` on that line, found with a dry run that runs no example and no hook. A test on the line that never started in any run, for example because an earlier test always takes the process down or a filter of the file leaves it out, makes deflake say so and exit with 1; the JSON report lists it with the verdict `not_run`.
 
+`TEST_PATH` may be a folder: deflake then finds every `*_test.rb` and `*_spec.rb` in it and in its subfolders, and checks them one after another, each as if it were given on its own. The report of each file starts with `== FILE`. A file that cannot run is reported and the others are still checked. At the end deflake names the files with failing or leaking tests and those it could not check. System tests are slow, so for a first pass over a Rails app give it the folders that matter, such as `test/models`, rather than all of `test`.
+
 Files ending in `_spec.rb` go to RSpec, unless they mention Minitest (a `minitest_helper` counts, and so do expectations such as `_(x).must_equal`) and neither RSpec nor `rails_helper`: those are `Minitest::Spec` files.
 
 A Minitest test is known by its class and method, `UserTest#test_name`. When two classes have the same name, as two `describe` blocks with the same description do, the second one's tests are `Name (2)#test_...`. A failing test in a class without a name, made with `Class.new` and never given one, cannot be run again by name: its failure shows up under *errors outside of tests*. A test a file brings in from another one with `require_relative` belongs to that other file, not to the line of the `require_relative`.
@@ -60,12 +63,12 @@ A Minitest test is known by its class and method, `UserTest#test_name`. When two
 
 | Option | Default | |
 | --- | --- | --- |
-| `-n`, `--runs N` | 10 | How many times to run the file |
+| `-n`, `--runs N` | 10 | How many times to run each file |
 | `-j`, `--jobs N` | 1 | How many test processes to run at once |
 | `-t`, `--timeout SECONDS` | none | Stop a test process that runs longer, in whole seconds; the test it was running counts as failed |
 | `-f`, `--format FORMAT` | `text` | `text` or `json` |
 
-Exit code: 0 when every test passed and nothing leaked (or every test skipped itself), 1 otherwise, 2 on usage errors (a missing or extra `TEST_PATH`, `--runs` or `--jobs` below 1), when the file has no tests or a filter of the project leaves them all out, or when the tests could not run (deflake then shows their output). When interrupted with Ctrl-C, deflake stops its test processes and ends as an interrupted program does, so a shell loop around it stops too.
+Exit code: 0 when every test passed and nothing leaked (or every test skipped itself), 1 otherwise, 2 on usage errors (a missing or extra `TEST_PATH`, `--runs` or `--jobs` below 1), when the file has no tests or a filter of the project leaves them all out, or when the tests could not run (deflake then shows their output). For a folder it is the highest code of its files, and 2 when it has no test files. When interrupted with Ctrl-C, deflake stops its test processes and ends as an interrupted program does, so a shell loop around it stops too.
 
 ### Parallel runs and databases
 
@@ -112,11 +115,11 @@ end
 
 ### JSON report
 
-`--format json` prints one object per test that ran or leaked (a test that skipped itself in every run and leaked nothing is left out, as in the text report) with `name`, `id`, `verdict` (`stable`, `failed`, `fails_on_its_own`, `order_dependent`, `random`, or `not_run` for a test on the line that never started; `failed` means it could not run alone), `runs` and `isolated_runs` counts (`isolated_runs` is `null` when the test never failed or could not run alone, as errors outside of tests cannot) (`total`, `failures`, `failure_rate` and `skipped`: `total` leaves out the runs where the test skipped itself), `errors` with their seeds, `leaks` (with `runs`, counting the runs where the test skipped itself too) and `culprits` (`ids`, `names`, `command`, `alone` when the test fails with no test before it, `hidden` when tests in a class without a name may be to blame, and `group_wide`). The format may change until 1.0.
+`--format json` prints one array for the whole run, with one object per test that ran or leaked (a test that skipped itself in every run and leaked nothing is left out, as in the text report) with `file`, `name`, `id`, `verdict` (`stable`, `failed`, `fails_on_its_own`, `order_dependent`, `random`, or `not_run` for a test on the line that never started; `failed` means it could not run alone), `runs` and `isolated_runs` counts (`isolated_runs` is `null` when the test never failed or could not run alone, as errors outside of tests cannot) (`total`, `failures`, `failure_rate` and `skipped`: `total` leaves out the runs where the test skipped itself), `errors` with their seeds, `leaks` (with `runs`, counting the runs where the test skipped itself too) and `culprits` (`ids`, `names`, `command`, `alone` when the test fails with no test before it, `hidden` when tests in a class without a name may be to blame, and `group_wide`). The format may change until 1.0.
 
 ## Limitations
 
-- deflake looks at one file at a time. A test broken by a test in another file shows up as failing only when the two files run together, which deflake does not do yet.
+- deflake runs one file at a time, even when given a folder. A test broken by a test in another file shows up as failing only when the two files run together, which deflake does not do yet.
 - Minitest files run as `ruby -Ilib -Itest FILE` (`lib` when there is one, and `-Ispec` too when there is a `spec` directory), RSpec files with RSpec's own defaults. A project that needs a different command is not supported yet.
 - A Minitest error outside of tests is seen only in a run where every test passed: a failing test also makes the process fail.
 - Leak detection sees what changed in the test process. It cannot see changes made by other processes, such as a browser in a system test.

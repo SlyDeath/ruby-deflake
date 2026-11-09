@@ -87,13 +87,14 @@ module Deflake
 
     def run_tests
       path, line = target
-      raise Error, "#{path} is a folder: deflake checks one test file at a time" if File.directory?(path)
-      raise Error, "no such file: #{path}" unless File.file?(path)
-
       Execution.timeout = @options[:timeout]
-      investigation = Investigation.new(path, line: line, runs: @options[:runs], jobs: @options[:jobs])
-      diagnoses = investigation.call
-      report(diagnoses, line, investigation)
+      check = Check.new(REPORTS.fetch(@options[:format]).new(@out), err: @err, runs: @options[:runs],
+                                                                    jobs: @options[:jobs])
+      return check.file(path, line) if File.file?(path)
+      raise Error, "no such file: #{path}" unless File.directory?(path)
+      raise Error, "#{path} is a folder: a line number needs a test file" if line
+
+      check.folder(path)
     end
 
     # A file whose name itself ends in ":12" is that file, not line 12 of another. The path is
@@ -106,33 +107,9 @@ module Deflake
       [path, line&.to_i]
     end
 
-    # A test on the line that never started is an error: something stopped every run before it,
-    # or the file's own filters leave it out
-    def report(diagnoses, line, investigation)
-      not_run = investigation.not_run
-      if not_run.any?
-        @err.puts "deflake: #{not_run.join(", ")} never ran in a run of the whole file " \
-                  "(a filter of the file leaves it out, or something stops every run before it)"
-      end
-      # As with a plain run, tests that all skipped themselves are not an error
-      @err.puts "deflake: #{skipped(line)}, nothing to report" if diagnoses.empty? && not_run.empty?
-      print_report(diagnoses, not_run: not_run, shared: investigation.shared_names)
-      diagnoses.all?(&:clean?) && not_run.empty? ? 0 : 1
-    end
-
-    # A reader that stops early, such as head, is not an error of deflake's
-    def print_report(diagnoses, **)
-      REPORTS.fetch(@options[:format]).new(@out).print(diagnoses, **)
-    rescue Errno::EPIPE
-      nil
-    end
-
-    def skipped(line)
-      line ? "the test at line #{line} skipped itself in every run" : "every test skipped itself"
-    end
-
     def parser
-      @parser ||= OptionParser.new("Usage: deflake TEST_PATH[:LINE] [options]")
+      @parser ||= OptionParser.new("Usage: deflake TEST_PATH[:LINE] [options]\n" \
+                                   "TEST_PATH may be a folder: every *_test.rb and *_spec.rb in it is checked")
     end
   end
 end
