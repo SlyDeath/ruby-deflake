@@ -5,6 +5,8 @@ module Deflake
   # Returns the exit code: 0 when nothing was found, 1 when something was, 2 when tests could not run
   class Check
     PATTERN = "**/*_{test,spec}.rb"
+    # Folders of installed gems and packages, whose tests are not the project's
+    SKIPPED = %w[vendor node_modules].freeze
 
     def initialize(report, err:, runs:, jobs:)
       @report = report
@@ -19,15 +21,37 @@ module Deflake
 
     # The files run one after another. A file that cannot run does not stop the others
     def folder(path)
-      files = Dir.glob(PATTERN, base: path).sort.map { |file| File.join(path, file) }.select { |file| File.file?(file) }
+      files = test_files(path)
       raise Error, "no test files (*_test.rb or *_spec.rb) in #{path}" if files.empty?
 
-      codes = finished { files.to_h { |file| [file, investigate_in_folder(file)] } }
-      summarize(codes)
+      @folder = true
+      codes = {}
+      finished { check_each(files, codes) }
       codes.values.max
+    ensure
+      summarize(files.size, codes) if codes&.any?
     end
 
     private
+
+    def test_files(path)
+      Dir.glob(PATTERN, base: path).sort
+         .reject { |file| File.dirname(file).split("/").intersect?(SKIPPED) }
+         .map { |file| File.join(path, file) }.select { |file| File.file?(file) }
+    end
+
+    # Stops when the reader of the report is gone: nobody would see the rest. After an interrupt
+    # the files checked so far are still reported
+    def check_each(files, codes)
+      files.each.with_index(1) do |file, number|
+        break if @closed
+
+        codes[file] = investigate_in_folder(file, number, files.size)
+      end
+    rescue Interrupt
+      output { @report.finish }
+      raise
+    end
 
     def finished
       result = yield
@@ -35,11 +59,12 @@ module Deflake
       result
     end
 
-    def investigate_in_folder(file)
-      output { @report.start(file) }
+    def investigate_in_folder(file, number, total)
+      output { @report.start(file, number, total) }
       investigate(file, nil)
     rescue Error => e
       @err.puts "deflake: #{e.message}"
+      output { @report.not_checked(file, e.message) }
       2
     end
 
@@ -58,29 +83,34 @@ module Deflake
                   "(a filter of the file leaves it out, or something stops every run before it)"
       end
       # As with a plain run, tests that all skipped themselves are not an error
-      @err.puts "deflake: #{skipped(line)}, nothing to report" if diagnoses.empty? && not_run.empty?
+      @err.puts "deflake: #{skipped(path, line)}, nothing to report" if diagnoses.empty? && not_run.empty?
       output { @report.print(diagnoses, file: path, not_run: not_run, shared: investigation.shared_names) }
       diagnoses.all?(&:clean?) && not_run.empty? ? 0 : 1
     end
 
-    # A reader that stops early, such as head, is not an error of deflake's
+    # A reader that stops early, such as head, is not an error of deflake's. The output is flushed
+    # here: otherwise the next fork flushes it and fails there
     def output
       yield
+      @report.flush
     rescue Errno::EPIPE
+      @closed = true
       nil
     end
 
-    def skipped(line)
-      line ? "the test at line #{line} skipped itself in every run" : "every test skipped itself"
+    def skipped(path, line)
+      return "the test at line #{line} skipped itself in every run" if line
+
+      @folder ? "every test of #{path} skipped itself" : "every test skipped itself"
     end
 
-    def summarize(codes)
+    def summarize(total, codes)
       files = codes.keys.group_by { |file| codes[file] }
-      summary = ["checked #{codes.size} files"]
-      summary << "failing or leaking tests in #{files[1].join(", ")}" if files[1]
-      summary << "could not check #{files[2].join(", ")}" if files[2]
-      summary << "nothing found" if summary.one?
-      @err.puts "deflake: #{summary.join("; ")}"
+      checked = codes.size == total ? total : "#{codes.size} of #{total}"
+      @err.puts "deflake: checked #{checked} files#{", nothing found" if files.keys == [0]}"
+      { 1 => "failing or leaking tests in:", 2 => "could not check:" }.each do |code, title|
+        @err.puts(title, *files[code].map { |file| "  #{file}" }) if files[code]
+      end
     end
   end
 end

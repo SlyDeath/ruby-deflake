@@ -88,8 +88,8 @@ module Deflake
     def run_tests
       path, line = target
       Execution.timeout = @options[:timeout]
-      check = Check.new(REPORTS.fetch(@options[:format]).new(@out), err: @err, runs: @options[:runs],
-                                                                    jobs: @options[:jobs])
+      report = REPORTS.fetch(@options[:format]).new(@out, err: @err)
+      check = Check.new(report, err: @err, runs: @options[:runs], jobs: @options[:jobs])
       return check.file(path, line) if File.file?(path)
       raise Error, "no such file: #{path}" unless File.directory?(path)
       raise Error, "#{path} is a folder: a line number needs a test file" if line
@@ -97,11 +97,11 @@ module Deflake
       check.folder(path)
     end
 
-    # A file whose name itself ends in ":12" is that file, not line 12 of another. The path is
+    # A file or folder whose name itself ends in ":12" is that one, not line 12 of another. The path is
     # taken as UTF-8 whatever the locale, as names in the report are
     def target
       argument = ResultFile.clean(@argv.first)
-      return [argument, nil] if File.file?(argument)
+      return [argument, nil] if File.exist?(argument)
 
       path, line = argument.match(/\A(.+?)(?::(\d+))?\z/m).captures
       [path, line&.to_i]

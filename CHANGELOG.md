@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-09
+
+- A folder piped into `head` no longer ends with "unexpected error": deflake stops when the reader of the report is gone.
+- Progress for a folder: `== FILE (3 of 40)` in the text report, `deflake: checking FILE (3 of 40)` on stderr with `--format json`.
+- A file of a folder that could not run is in the JSON report too, with the verdict `not_checked`.
+- `vendor` and `node_modules` are left out when a folder is searched for tests.
+- After Ctrl-C the summary of a folder still lists the files checked so far, and the JSON report has their tests.
+- The summary lists one file per line, and a file whose tests all skipped themselves is named.
+- A folder whose name ends in `:N` is taken as that folder, not as line N.
+
 ## [0.2.0] - 2026-11-09
 
 - `TEST_PATH` may be a folder: every `*_test.rb` and `*_spec.rb` in it and its subfolders is checked, one file after another, with one report and a list of the files to look at. No more shell loops over files.

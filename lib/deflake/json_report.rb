@@ -5,12 +5,25 @@ require "json"
 module Deflake
   # Prints diagnoses as JSON for CI and other tools. The format may change before 1.0
   class JsonReport
-    def initialize(out)
+    def initialize(out, err: nil)
       @out = out
+      @err = err
       @objects = []
     end
 
-    def start(_file); end
+    # Nothing is printed until the end, so the progress goes to stderr
+    def start(file, number, total)
+      @err&.puts "deflake: checking #{file} (#{number} of #{total})"
+    end
+
+    def not_checked(file, message)
+      @objects << { file: file, **never_ran(file), verdict: :not_checked,
+                    errors: [{ message: message, seeds: [] }] }
+    end
+
+    def flush
+      @out.flush if @out.respond_to?(:flush)
+    end
 
     # not_run: ids of tests on the line that never started, each one an object with the verdict "not_run"
     def print(diagnoses, file: nil, not_run: [], **)

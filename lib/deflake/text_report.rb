@@ -10,15 +10,22 @@ module Deflake
       random: "fails at random, not after particular tests"
     }.freeze
 
-    def initialize(out)
+    def initialize(out, **)
       @out = out
     end
 
     # Heads the tests of each file when a folder is checked
-    def start(file)
+    def start(file, number, total)
       @out.puts if @started
       @started = true
-      @out.puts "== #{file}"
+      @out.puts "== #{file} (#{number} of #{total})"
+    end
+
+    # The error is already on stderr
+    def not_checked(_file, _message); end
+
+    def flush
+      @out.flush if @out.respond_to?(:flush)
     end
 
     def finish; end
