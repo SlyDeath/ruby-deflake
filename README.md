@@ -1,6 +1,16 @@
+<div align="center">
+
 # deflake
 
-Find flaky tests in Minitest and RSpec and explain why they fail.
+**Find flaky tests in Minitest and RSpec and explain why they fail.**
+
+[![Gem Version](https://img.shields.io/gem/v/deflake?logo=rubygems&logoColor=white&color=cc342d)](https://rubygems.org/gems/deflake)
+[![Downloads](https://img.shields.io/gem/dt/deflake?logo=rubygems&logoColor=white)](https://rubygems.org/gems/deflake)
+[![CI](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml)
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.3-cc342d?logo=ruby&logoColor=white)](https://www.ruby-lang.org)
+[![License: MIT](https://img.shields.io/github/license/SlyDeath/ruby-deflake?color=blue)](LICENSE.txt)
+
+</div>
 
 A flaky test fails once in a while, someone adds a retry, and the cause stays.
 deflake runs a suspicious test many times and answers three questions:
