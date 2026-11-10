@@ -4,6 +4,8 @@
 
 **Find flaky tests in Minitest and RSpec and explain why they fail.**
 
+Repeat · Isolate · Bisect · Detect leaked state
+
 [![Gem Version](https://img.shields.io/gem/v/deflake?logo=rubygems&logoColor=white&color=cc342d)](https://rubygems.org/gems/deflake)
 [![Downloads](https://img.shields.io/gem/dt/deflake?logo=rubygems&logoColor=white)](https://rubygems.org/gems/deflake)
 [![CI](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml)
