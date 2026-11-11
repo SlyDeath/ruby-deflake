@@ -68,6 +68,7 @@ module Deflake
         pools = connected_pools
         return if pools.empty?
 
+        Leaks.quietly { Databases.record(pools.map(&:last)) }
         Rows.depth = Rows.open_transactions
         State.new(pools.to_h { |owner, pool| [owner, count(pool)] }, Rows.loads.to_i)
       end
@@ -134,12 +135,14 @@ module Deflake
       end
 
       # Outside the query cache: a count the test makes itself, such as User.count, must still go to
-      # the database, and must not find the cache emptied by deflake either
+      # the database, and must not find the cache emptied by deflake either. Named SCHEMA, as Rails'
+      # own internal queries are, so that assert_no_queries and the log leave the counts out
       def count(pool)
         pool.with_connection do |connection|
           uncached(connection) do
             (connection.tables - INTERNAL_TABLES).to_h do |table|
-              [table, connection.select_value("SELECT COUNT(*) FROM #{connection.quote_table_name(table)}").to_i]
+              sql = "SELECT COUNT(*) FROM #{connection.quote_table_name(table)}"
+              [table, connection.select_value(sql, "SCHEMA").to_i]
             end
           end
         end

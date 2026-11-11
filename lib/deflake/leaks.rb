@@ -6,6 +6,7 @@ require_relative "leaks/globals"
 require_relative "leaks/cache"
 require_relative "leaks/current"
 require_relative "leaks/rows"
+require_relative "leaks/databases"
 require_relative "leaks/jobs"
 
 module Deflake

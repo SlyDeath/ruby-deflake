@@ -33,11 +33,20 @@ module Deflake
 
     module_function
 
-    # The examples deflake asked for through a file, which holds more of them than a command line could
+    # The examples deflake asked for through a file, which holds more of them than a command line could.
+    # RSpec filters by ids only the files it has ids for, so the examples of a file brought in with
+    # require_relative would all run: the others are excluded by their ids too. An example's :id is
+    # not in its metadata until asked for, so the filter builds it from the parts RSpec builds it from
     def only(config, path)
-      ResultFile.unpack_ids(File.read(path)).group_by { |id| id[/\A(.+)\[[^\]]+\]\z/, 1] }.each do |file, ids|
+      wanted = ResultFile.unpack_ids(File.read(path))
+      wanted.group_by { |id| id[/\A(.+)\[[^\]]+\]\z/, 1] }.each do |file, ids|
         config.filter_manager.add_ids(file, ids.map { |id| id[/\[([^\]]+)\]\z/, 1] }) if file
       end
+      exclude_others(config, wanted.to_set)
+    end
+
+    def exclude_others(config, wanted)
+      config.filter_run_excluding(rerun_file_path: ->(file, meta) { !wanted.include?("#{file}[#{meta[:scoped_id]}]") })
     end
 
     # The leaks of a top-level group that none of its examples left: the state a before(:context)

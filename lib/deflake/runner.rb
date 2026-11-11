@@ -22,12 +22,18 @@ module Deflake
     attr_reader :seen
     # Every summary of the last call, the quiet ones too, and every test's name by its id
     attr_reader :all, :names
+    # Databases that test processes running at once used together in the last call
+    attr_reader :shared_databases
 
     # Returns a hash of test id => Summary. Runs where a test skipped itself count only for its
     # leaks, and a test that skipped itself every time and leaked nothing is left out.
     # Errors outside of any test, in a run of the whole file, show up as Execution::OUTSIDE
     def call
-      rows = in_parallel(seeds) { |seed, worker| execute(seed, worker_env(worker)) }
+      databases = SharedDatabases.new
+      rows = databases.watch(@jobs) do |folder|
+        in_parallel(seeds) { |seed, worker| execute(seed, worker_env(worker, folder)) }
+      end
+      @shared_databases = databases.shared
       check_some_ran(rows)
       check_some_tests(rows)
       # The id, not the name: RSpec examples can share a description
@@ -110,10 +116,10 @@ module Deflake
     end
 
     # Same convention as parallel_tests: "", "2", "3"... so each process can use its own database
-    def worker_env(worker)
+    def worker_env(worker, folder)
       return {} if @jobs == 1
 
-      { "TEST_ENV_NUMBER" => worker.zero? ? "" : (worker + 1).to_s }
+      { "TEST_ENV_NUMBER" => worker.zero? ? "" : (worker + 1).to_s, ResultFile::DATABASES_KEY => folder }
     end
 
     # Leaks outside of tests, such as those of a before(:all) hook, are not quiet either

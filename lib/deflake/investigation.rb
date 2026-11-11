@@ -30,6 +30,9 @@ module Deflake
       summaries.values.sort_by { |summary| [summary.name, summary.id] }.map { |summary| diagnose(summary) }
     end
 
+    # Databases that the test processes running at once shared in the runs of the whole file
+    attr_reader :shared_databases
+
     # Names that more than one test of the file has, so a report tells them apart by their ids
     def shared_names
       @names.values.tally.select { |_, count| count > 1 }.keys
@@ -41,6 +44,7 @@ module Deflake
     def focused(focus)
       file = runner
       summaries = file.call
+      @shared_databases = file.shared_databases
       # Of every test that ran, including those that skipped themselves
       @names = file.names
       @not_run = focus ? focus - file.seen : []
@@ -70,9 +74,20 @@ module Deflake
       errors = diagnosis.file_runs.errors
       case diagnosis.verdict
       when :order_dependent then seeds_of(errors)
-      when :fails_on_its_own then seeds_of(errors.except(*diagnosis.isolated_runs.errors.keys))
+      when :fails_on_its_own then seeds_of(new_errors(errors, diagnosis.isolated_runs.errors))
       else []
       end
+    end
+
+    # Numbers left out: a test that fails at random tells other values every time. Bisecting it would
+    # name whatever test draws random numbers before it, as Minitest seeds them once for the whole run
+    def new_errors(errors, alone)
+      known = alone.keys.map { |message| shape(message) }
+      errors.reject { |message, _| known.include?(shape(message)) }
+    end
+
+    def shape(message)
+      message.to_s.gsub(/0x\h+|\d+(?:\.\d+)?/, "N")
     end
 
     # The first seed of every error first, as a single odd failure may be the first one

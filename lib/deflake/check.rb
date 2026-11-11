@@ -7,6 +7,8 @@ module Deflake
     PATTERN = "**/*_{test,spec}.rb"
     # Folders of installed gems and packages, whose tests are not the project's
     SKIPPED = %w[vendor node_modules].freeze
+    # Errors of test processes that wait for each other on one database
+    LOCKED = /database is locked|BusyException|database table is locked|deadlock/i
 
     def initialize(report, err:, runs:, jobs:)
       @report = report
@@ -84,6 +86,7 @@ module Deflake
       end
       # As with a plain run, tests that all skipped themselves are not an error
       @err.puts "deflake: #{skipped(path, line)}, nothing to report" if diagnoses.empty? && not_run.empty?
+      warn_shared_database(diagnoses, investigation)
       output { @report.print(diagnoses, file: path, not_run: not_run, shared: investigation.shared_names) }
       diagnoses.all?(&:clean?) && not_run.empty? ? 0 : 1
     end
@@ -96,6 +99,26 @@ module Deflake
     rescue Errno::EPIPE
       @closed = true
       nil
+    end
+
+    # Once per run of deflake, as the files of a folder would all repeat it. Databases that
+    # ActiveRecord connects to are known; errors of waiting for a lock tell about any other one
+    def warn_shared_database(diagnoses, investigation)
+      return if @jobs < 2 || @warned_shared
+
+      shared = investigation.shared_databases.to_a
+      errors = diagnoses.flat_map { |diagnosis| diagnosis.file_runs.errors.keys }
+      if shared.any?
+        warn_shared("test processes running at once used the same database (#{shared.join(", ")})")
+      elsif errors.any? { |error| LOCKED.match?(error.to_s) }
+        warn_shared("test processes running at once seem to wait for each other on one database")
+      end
+    end
+
+    def warn_shared(problem)
+      @warned_shared = true
+      @err.puts "deflake: #{problem}, so they change each other's rows and the results may be wrong; " \
+                "give each its own database with TEST_ENV_NUMBER, or run with --jobs 1"
     end
 
     def skipped(path, line)

@@ -36,6 +36,15 @@ module Deflake
       assert_equal [5], Investigation.new("x.rb", runs: 1, adapter: Adapters::Minitest).send(:bisect_seeds, diagnosis)
     end
 
+    # A random test fails with other numbers every time: that is the same error, not a new one
+    def test_errors_that_differ_only_in_numbers_are_no_reason_for_a_bisect
+      file = Summary.new([Run.new(seed: 5, passed: false, error: "Expected |93.77 - 100| (6.22) to be <= 5.")])
+      alone = Summary.new([Run.new(seed: 7, passed: false, error: "Expected |105.12 - 100| (5.12) to be <= 5.")])
+      diagnosis = Diagnosis.new(name: "t", id: "t", file_runs: file, isolated_runs: alone, culprits: nil)
+
+      assert_empty Investigation.new("x.rb", runs: 1, adapter: Adapters::Minitest).send(:bisect_seeds, diagnosis)
+    end
+
     def test_bisect_tries_the_first_seed_of_every_error_first
       errors = { "timeout" => [1, 2], "polluted" => [3, 4] }
 
@@ -55,6 +64,15 @@ module Deflake
       rows = Adapters::RSpec.run_in_order(fixture("fail_fast_order_spec.rb"), ids, seed: 1)
 
       assert_equal([false, true], ids.map { |id| rows.find { |row| row["id"] == id }&.fetch("passed") })
+    end
+
+    # Examples of another file come in with require_relative, and only those asked for run
+    def test_rspec_runs_in_order_only_the_examples_asked_for_from_any_file
+      ids = ["./test/fixtures/required_examples_spec.rb[1:1]"]
+      rows = Adapters::RSpec.run_in_order(fixture("required_examples_spec.rb"), ids, seed: 1)
+
+      assert_equal(ids, rows.filter_map { |row| row["id"] })
+      assert(rows.all? { |row| row["passed"] })
     end
 
     def test_rspec_focus_lists_examples_without_running_them

@@ -61,6 +61,13 @@ module Deflake
       assert_equal 0, summary.failures, summary.errors.keys.join("\n")
     end
 
+    def test_counting_rows_is_not_a_query_of_the_test
+      summary = Runner.new(fixture("rails_fixture_queries.rb"),
+                           runs: 1).call.fetch("FixtureQueriesTest#test_cached_fixtures_make_no_queries")
+
+      assert_equal 0, summary.failures, summary.errors.keys.join("\n")
+    end
+
     def test_leaks_of_a_class_level_hook_show_up_outside_of_tests
       outside = Runner.new(fixture("class_leak.rb"), runs: 1).call.fetch(Execution::OUTSIDE)
 

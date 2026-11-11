@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.2] - 2026-11-11
+
+- The Rows detector counts rows with queries named `SCHEMA`, so Rails' `assert_no_queries` and the log leave them out. A test that loads cached fixtures inside `assert_no_queries` no longer fails under deflake.
+- A test that fails at random on its own no longer gets culprits: errors that differ only in numbers count as the same error, so they are no reason to bisect.
+- In RSpec, a bisect runs only the examples it asks for, also when a file brings in examples of another one with `require_relative`.
+- With `--jobs`, deflake says so when test processes share a database: it names the database when ActiveRecord connected them to the same one, and also warns when the errors show them waiting for each other on one.
 
 ## [0.2.1] - 2026-11-09
 

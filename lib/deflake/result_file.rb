@@ -13,9 +13,11 @@ module Deflake
     ONLY_KEY = "DEFLAKE_ONLY"
     # Path of the file whose tests to list, with where each is defined, instead of running them (Minitest)
     LIST_KEY = "DEFLAKE_LIST"
+    # Folder where each test process running alongside others writes which databases it used
+    DATABASES_KEY = "DEFLAKE_DATABASES"
     # Every variable that tells a test process what to do: a test that starts deflake itself
     # must not pass them on
-    KEYS = [ENV_KEY, ORDER_KEY, ONLY_KEY, LIST_KEY].freeze
+    KEYS = [ENV_KEY, ORDER_KEY, ONLY_KEY, LIST_KEY, DATABASES_KEY].freeze
     # Characters JSON escapes with a short form; other control characters become \u00XX
     ESCAPES = { '"' => '\\"', "\\" => "\\\\", "\n" => "\\n", "\r" => "\\r", "\t" => "\\t" }.freeze
 
