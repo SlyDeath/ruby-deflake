@@ -29,7 +29,7 @@ A Minitest test is known by its class and method, `UserTest#test_name`. When two
 | Cache | New keys in `Rails.cache`, when it is a `MemoryStore` |
 | Current | `ActiveSupport::CurrentAttributes` left set; attributes with a proc default are not compared. A default changed in place, such as a list inside it, is reported too |
 | Rows | Rows created or deleted outside a rolled back transaction, in every database connected before the test; fixtures loaded during a test are not counted, nor fixtures a test without a transaction deletes again. The counts bypass ActiveRecord's query cache |
-| Jobs | Jobs left in the ActiveJob test queue. `ActiveJob::TestHelper` empties the queue before each test that includes it, so with every test including it these reports are noise: remove the detector as shown below |
+| Jobs | Jobs left in the ActiveJob test queue. `ActiveJob::TestHelper` empties the queue before each test that includes it, so with every test including it these reports are noise: remove the detector as shown in the [README](../README.md#leak-detectors) |
 
 ## JSON report
 
