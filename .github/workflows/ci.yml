@@ -30,6 +30,14 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
       - run: bundle exec rake test
+        env:
+          COVERAGE: "1"
+      # One report is enough; without the token (as in a fork) the upload fails without failing CI
+      - uses: codecov/codecov-action@v5
+        if: matrix.ruby == '4.0' && matrix.minitest == '6'
+        with:
+          files: coverage/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest

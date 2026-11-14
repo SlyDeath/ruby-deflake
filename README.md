@@ -9,6 +9,7 @@ Repeat · Isolate · Bisect · Detect leaked state
 [![Gem Version](https://img.shields.io/gem/v/deflake?logo=rubygems&logoColor=white&color=cc342d)](https://rubygems.org/gems/deflake)
 [![Downloads](https://img.shields.io/gem/dt/deflake?logo=rubygems&logoColor=white)](https://rubygems.org/gems/deflake)
 [![CI](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SlyDeath/ruby-deflake/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/SlyDeath/ruby-deflake/graph/badge.svg)](https://codecov.io/gh/SlyDeath/ruby-deflake)
 [![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.3-cc342d?logo=ruby&logoColor=white)](https://www.ruby-lang.org)
 [![License: MIT](https://img.shields.io/github/license/SlyDeath/ruby-deflake?color=blue)](LICENSE.txt)
 
